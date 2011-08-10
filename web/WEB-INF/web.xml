@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="WebApp_ID" version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+	<context-param>
+   		 <param-name>contextConfigLocation</param-name>
+    	 <param-value>WEB-INF/classes/applicationContext.xml</param-value>
+ 	 </context-param>
+	<display-name>
+	my-media-management</display-name>
+	
+	<listener>
+		<!-- Enables creation of the root ApplicationContext  -->
+		<!-- 
+			Upon initialization, it will attempt to use the default location of
+			/WEB-INF/applicationContext.xml to find the configuration file for the root ApplicationContext
+		 -->
+		<listener-class>
+			org.springframework.web.context.ContextLoaderListener
+		</listener-class>
+	</listener>
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+		<welcome-file>index.htm</welcome-file>
+		<welcome-file>index.jsp</welcome-file>
+		<welcome-file>default.html</welcome-file>
+		<welcome-file>default.htm</welcome-file>
+		<welcome-file>default.jsp</welcome-file>
+	</welcome-file-list>
+	
+	<servlet>
+		<servlet-name>mymedia</servlet-name>
+		<servlet-class>
+			<!-- Main servlet which provides the central entry point for the application 
+			
+			To locate the XML for the WebApplicationContext, the DispatcherServlet will by 
+			default take the name of its servlet definition from web.xml, append -servlet.xml,
+			and look for that file in /WEB-INF. Therefore mymedia-servlet.xml should exist.
+			
+			-->
+			org.springframework.web.servlet.DispatcherServlet
+		</servlet-class>
+	</servlet>
+	
+	<servlet-mapping>
+			<servlet-name>mymedia</servlet-name>
+			<url-pattern>*.html</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+			<servlet-name>mymedia</servlet-name>
+			<url-pattern>*.do</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+			<servlet-name>mymedia</servlet-name>
+			<!-- *.extension pattern can not be used after / pattern because it will be seen as a wild card
+				which  matches any sequence of characters from that point forward. Thus, /mymedia/*.go
+				should be replaced with /mymedia/*
+				
+				*.extension itself matches any file ending with extension
+			 -->
+			<!--  <url-pattern>/mymedia/*.go</url-pattern>-->
+			<url-pattern>/mymedia/*</url-pattern>
+	</servlet-mapping>
+	
+</web-app>

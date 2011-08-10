@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 07.11.2006 15:06:53 by Hibernate Tools 3.2.0.beta7 -->
+<hibernate-mapping auto-import="false">
+    <class name="com.my.model.ToneCategory" table="TRBT_TONE_CATEGORY">
+        <id name="id" type="integer">
+            <column name="ID" precision="10" scale="0" />
+            <generator class="native">
+                <param name="sequence">S_RBT_TONE_CATEGORY</param>
+            </generator>
+        </id>
+        <many-to-one name="tone" class="com.my.model.Tone">
+            <column name="TONE_ID" precision="10" scale="0" not-null="true" />
+        </many-to-one>
+        <many-to-one name="category" class="com.my.model.Category">
+            <column name="CATEGORY_ID" precision="10" scale="0" not-null="true" />
+        </many-to-one>
+        <property name="validFrom" type="timestamp">
+            <column name="VALID_FROM" length="7" />
+        </property>
+        <property name="validTo" type="timestamp">
+            <column name="VALID_TO" length="7" />
+        </property>
+        <property name="idx" type="integer">
+            <column name="IDX" precision="3" scale="0"/>
+        </property>
+    </class>
+</hibernate-mapping>

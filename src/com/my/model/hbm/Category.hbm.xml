@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 07.11.2006 15:06:53 by Hibernate Tools 3.2.0.beta7 -->
+<hibernate-mapping auto-import="false">
+    <class name="com.my.model.Category" table="TRBT_CATEGORY">
+        <id name="id" type="integer">
+            <column name="ID" precision="10" scale="0" />
+            <generator class="native">
+                <param name="sequence">S_RBT_CATEGORY</param>
+            </generator>
+        </id>
+        <many-to-one name="parent" class="com.my.model.Category" lazy="false">
+            <column name="PARENT_ID" precision="10" scale="0"/>
+        </many-to-one>
+        <property name="idx" type="integer">
+            <column name="IDX" precision="3" scale="0" not-null="true"/>
+        </property>
+        <property name="categoryIdentifier" type="string">
+            <column name="CATEGORY_IDENTIFIER" length="50" not-null="true"/>
+        </property>
+        <property name="ranked" type="boolean">
+            <column name="RANKED" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaWeb" type="boolean">
+            <column name="AVAILABLE_VIA_WEB" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaWap" type="boolean">
+            <column name="AVAILABLE_VIA_WAP" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaIvr" type="boolean">
+            <column name="AVAILABLE_VIA_IVR" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="dtmf" type="integer">
+            <column name="DTMF" precision="1" scale="0"/>
+        </property>
+        <property name="created" type="timestamp">
+            <column name="CREATED" length="7" not-null="true" />
+        </property>
+        <property name="createdBy" type="string">
+            <column name="CREATED_BY" length="30" not-null="true" />
+        </property>
+        <property name="rankAutoScheduleTime" type="short">
+            <column name="RANK_AUTO_SCHEDULE_TIME" precision="4" scale="0" not-null="false"/>
+        </property>
+        <property name="rankAutoScheduleDay" type="integer">
+            <column name="RANK_AUTO_SCHEDULE_DAY" precision="2" scale="0" not-null="false"/>
+        </property>
+        <property name="rankAutoTopTones" type="integer">
+            <column name="RANK_AUTO_TOP_TONES" precision="2" scale="0" not-null="false"/>
+        </property>
+        <property name="lastRefreshRanked" type="timestamp">
+            <column name="LAST_REFRESH_RANKED" not-null="false"/>
+        </property>
+        <property name="rankType">
+            <column name="RANK_TYPE" precision="1" scale="0" not-null="false"/>
+            <type name="com.my.model.JdkEnumUserType">
+                <param name="targetClass">com.my.model.CategoryRankType</param>
+            </type>
+        </property>  
+        <property name="imageUploaded" type="boolean">
+            <column name="IMAGE_UPLOADED" precision="1" scale="0" not-null="true"/>
+        </property>
+        
+        <list name="children" inverse="true" cascade="all" >
+            <key>
+                <column name="PARENT_ID" precision="10" scale="0"/>
+            </key>
+            <list-index column="IDX"/>
+            <one-to-many class="com.my.model.Category" />
+        </list>
+        <set name="toneCategories" inverse="true" cascade="all" >
+            <key>
+                <column name="CATEGORY_ID" precision="10" scale="0" not-null="true" />
+            </key>
+            <one-to-many class="com.my.model.ToneCategory" />
+        </set>
+		<property name="promotional" type="boolean">
+			<column name="PROMOTIONAL" precision="1" scale="0" not-null="true" />
+		</property>
+
+        <property name="promotionValidFrom" type="timestamp">
+            <column name="PROMOTION_VALID_FROM"/>
+        </property>
+
+        <property name="promotionValidTo" type="timestamp">
+            <column name="PROMOTION_VALID_TO"/>
+        </property>
+
+        <list name="rankedToneCategories" inverse="true">
+            <key>
+                <column name="CATEGORY_ID" precision="10" scale="0" not-null="true" />
+            </key>
+            <list-index column="IDX"/>
+            <one-to-many class="com.my.model.ToneCategory" />
+        </list>
+        <map name="details" inverse="true" cascade="all,delete-orphan">
+            <key>
+                <column name="CATEGORY_ID" precision="10" scale="0" not-null="true" />
+            </key>
+            <map-key-many-to-many column="LANGUAGE_CODE" class="com.my.model.Language"/>
+            <one-to-many class="com.my.model.CategoryDetails"/>
+        </map>
+    </class>
+    <query name="rootCategories"><![CDATA[
+     			from com.my.model.Category where parent is null
+     		]]>
+    </query>
+    
+    <sql-query name="rootCategoriesSQL">
+    	<!-- NB: Must specify the return type for native SQL -->
+    	<return alias="category" class="com.my.model.Category"></return>
+    	<![CDATA[
+     			select * from TRBT_CATEGORY where parent_id is null
+     		]]>
+    </sql-query>
+</hibernate-mapping>

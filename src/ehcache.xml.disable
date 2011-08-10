@@ -1,0 +1,57 @@
+<ehcache>
+    <!--
+    	see ehcache-failsafe.xml from ehcache jar for detailed parameter description.
+    -->
+    <diskStore path="java.io.tmpdir"/>
+    
+    <!-- 
+    	Considerations for the cache settings
+    	o in commit of org.hibernate.transaction.JDBCTransacion, first the cache is updated
+    	  inside notifyLocalSynchsBeforeTransactionCompletion, then changed elements are
+    	  committed to the database in commitAndResetAutoCommit    	
+    	o as we sometimes need to change values directly in the database, the expiration 
+    	  should not be too long.
+    	o writes should go directly or at least in a very short time frame into the database,
+    	  as read-only applications (e.g. the bulk import) otherwise would not get the
+    	  changes
+    	o check carefully if there are cache-objects with up-to-dateness as their first requirement:
+	      caching must be disabled for those.
+    	o Which cache-groups really contain objects that are re-accessed? Otherwise the caching-work
+    	  would just be added load.
+    	o According to Hibernate in Action, data that is updated more often than read should not use
+    	  the 2nd level cache due to performance issues.
+     -->
+     
+    <!--
+    	The current settings are just initial settings to overcome the default ones and are extremely coarse.
+    	They are by far not perfect and should be adjusted.    	
+    -->     
+    <!-- 
+    	The timeToIdleSeconds attribute defines the expiry time in seconds since an element
+		was last accessed in the cache.
+		
+		The timeToLiveSeconds attribute defines the maximum expiry time in seconds since the
+		element was added to the cache. If the cached entities will never be changed then no
+		need to evict. Therefore you can sent timeToLive to some large value
+     -->
+    
+    <defaultCache
+            maxElementsInMemory="300"
+            eternal="false"
+            timeToIdleSeconds="120"
+            timeToLiveSeconds="120"
+            overflowToDisk="false"
+            maxElementsOnDisk="10000000"
+            diskPersistent="false"
+            diskExpiryThreadIntervalSeconds="120"
+            memoryStoreEvictionPolicy="LRU"
+            />
+            
+    <cache name="com.my.model.Category"
+        maxElementsInMemory="300"
+        eternal="false"
+        overflowToDisk="false"
+		timeToIdleSeconds="300"
+        timeToLiveSeconds="600"
+        />                                                                                                            
+</ehcache>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<!-- 
+	1. It is likely that the system is configured to cause all requests to go to the FrontController
+	   (the DispatchServlet). How does the DispatchServlet know which controller in your application 
+	   to send the request.
+	   A. You need to create a mapping of ULI to controller using either SimpleUrlHandlerMapping,
+	   	  ControllerClassNameHandlerMapping or BeanNameUrlHandlerMapping.
+	   	  By default, Spring MVC is using the BeanNameUrlHandlerMapping handler mapping.
+	   	  	Spring MVC will search for all beans configured with a name parameter that begins 
+	   	  	with a / (forward slash) and will use those names as URI mappings.
+	   	  	
+	   	  	For a name like '/category.do' will be prefixed by the WebApplicationContext path and the 
+	   	  	servlet mapping to form the full path to the Controller.
+	   	  	
+	   	  	
+	   	  	NOTE: We do not need a bean definition for BeanNameUrlHandlerMapping as this is automatically
+	   	  	created by the Dispatcher. However, if we need to set any of the Handler Mapping properties
+	   	  	we need to define it as follows. Here we are setting the interceptors property.
+	   	  	 
+	   	  	<bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping">
+				<property name="interceptors">
+				<list>
+					<ref local="webAppIntercptor"/>	
+				</list>
+				</property>
+			</bean>
+			
+	2. How does the dispatcher know what part of the URL to used as the lookup key?
+	   By default it takes the part of the URL just after the servlet mapping path (if there is one)
+	   So from URL http://localhost:8060/my-media-management/mymedia/category.go it will take
+	   /category.go and search against a HandlerMapping.
+	   
+	   Here the ServletMapping is below and mapping path is /mymedia
+	   	<servlet-mapping>
+			<servlet-name>mymedia</servlet-name>
+			<url-pattern>/mymedia/*</url-pattern>
+		</servlet-mapping>
+	   	
+	   	If we want the bean name to include the servlet mapping path, we must set alwaysUseFullPath to true
+	   	so that the dispatcher will take /mymedia/category.go as the map key
+	   	
+	2. After the handling controller is done, it will pass a model and view name back to the dispatcher.
+		How will the dispatcher know which View instance should it should pass the model to for rendering?
+		A. By configuring a mapping of view names to Views using either InternalResourceViewResolver,
+			
+ -->
+ 
+<beans>
+	
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		
+		 <!-- 
+		 TIP:
+		 	place all view pages, including JSP pages, inside or below the /WEB-INF directory.
+			This protects the pages from being retrieved independently of the Controllers that 
+			configure them.
+		  -->
+		  
+		  
+		  <!-- 
+			prefix and suffix to be used when generating the full path to the view resource.
+			For a logical view name 'category', the full path to the resource becomes 
+			/WEB-INF/pages/category.jsp
+		 -->
+		<property name="prefix" value="/WEB-INF/pages/" />
+		<property name="suffix" value=".jsp"/>
+	</bean>
+	
+	<!-- NOTES: Message Resource
+		 The Message resource will look in the class path for files with base name = messages 
+	 -->
+	<bean id="messageSource"
+		class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basename"><value>messages</value></property>
+	</bean>
+
+	<bean id="webAppIntercptor" class="com.my.cntl.WebAppIntercptor"/>
+	
+	<bean id="customView" class="com.my.cntl.MyCustomView" />
+	
+	<!-- Example using the default BeanNameUrlHandlerMapping -->
+	<bean name="/category.do" class="com.my.cntl.CategoryController">
+		<property name="categoryService" ref="categoryService"></property>
+	</bean>
+	
+	<!-- NOTE: SimpleUrlHandlerMapping will override usage of the dafault BeanNameHandlerMapping 
+		so we must define category.do here if we want to resolve it -->
+	<!-- Example Using SimpleUrlHandlerMapping -->
+	<bean id="publicUrlMapping"
+		class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+			<property name="mappings">
+				<value>
+					/category.html=categoryController
+					/category.do=categoryController
+					/mymedia/category.go=categoryController
+					/categoryEdit.do=categorySFController
+				</value>
+			</property>
+			<property name="alwaysUseFullPath" value="true"/> 
+	</bean>
+	
+	<bean name="categoryController" class=" com.my.cntl.CategoryController ">
+		<property name="categoryService" ref="categoryService"></property>
+		<property name="customView" ref="customView"/>
+	</bean>
+	<!--END Example Using SimpleUrlHandlerMapping -->
+	
+	<bean id="validator" class="com.my.cntl.CategoryController$CategoryValidator">
+	</bean>
+	<bean id="categorySFController" class=" com.my.cntl.CategoryController$CategorySFController">
+		<property name="validator" ref="validator"></property>
+		<property name="categoryService" ref="categoryService"></property>
+	</bean>
+	
+	<bean id="exceptionResolver"
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<!-- 
+			The defaultErrorView property maps a view to which the request will be forwarded 
+			if the exception thrown is not mapped in the exceptionMappings property.
+		 -->
+		<property name="defaultErrorView" value=""/>
+		<property name="exceptionMappings">
+			<value>
+				java.lang.NullPointerException=nullPointerErrorView
+				javax.servlet.ServletException=servletErrorView
+			</value>
+		</property>
+	</bean>
+
+	<!--
+	
+		IS THIS A SERVLET (Container) OR DispatcherServlet Mapping Issue ????
+		See below what the different Error Report look like:
+		
+		http://localhost:8060/my-media-management/category.go
+		
+		<servlet-mapping>
+			<servlet-name>mymedia</servlet-name>
+			<url-pattern>/mymedia/*</url-pattern>
+		</servlet-mapping>
+		
+		:Servlet Mapping Exception Looks Like:
+		type Status report
+		message /my-media-management/category.go
+		description The requested resource (/my-media-management/category.go) is not available.
+		
+		
+		:Dispatcher Mapping Exception:
+		type Status report
+		message
+		description The requested resource () is not available.
+		
+	-->
+</beans>

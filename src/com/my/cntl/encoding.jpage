@@ -1,0 +1,1 @@
+String y = new String("Здравствуйте".getBytes("Cp1251"));System.out.print(y); (No explicit return value)

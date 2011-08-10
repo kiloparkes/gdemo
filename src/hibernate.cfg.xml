@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-configuration
+    PUBLIC "-//Hibernate/Hibernate Configuration DTD//EN"
+    "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+	<session-factory>
+
+        <!-- Database connection settings -->
+        
+        <!--  
+        <property name="hibernate.connection.datasource">
+            java:/comp/env/jdbc/mainDB
+        </property>
+        -->
+        <property name="connection.driver_class">oracle.jdbc.OracleDriver</property>
+        <property name="connection.url">jdbc:oracle:thin:@//localhost:1521/XE</property>
+        <property name="connection.username">rbtstd</property>
+        <property name="connection.password">rbtstd</property>
+		
+	 	<property name="dialect">org.hibernate.dialect.Oracle10gDialect</property>
+	 	<!--  
+		<property name="cache.provider_class">org.hibernate.cache.EhCacheProvider</property>
+		-->
+		
+		<!-- Echo all executed SQL to stdout -->
+		<!-- sql output should be enabled by setting org.hibernate.SQL=DEBUG -->
+		<!-- 
+		<property name="show_sql">false</property>
+		 -->
+        
+        <!-- Booleans in HQL Queries -->
+        <property name="hibernate.query.substitutions">true 1, false 0</property>
+        
+		<!-- mapping files -->
+
+        <mapping resource="com/my/model/hbm/Category.hbm.xml" />
+        <mapping resource="com/my/model/hbm/CategoryDetails.hbm.xml" />
+        <mapping resource="com/my/model/hbm/Language.hbm.xml" />
+        <mapping resource="com/my/model/hbm/Tone.hbm.xml" />
+        <mapping resource="com/my/model/hbm/ToneCategory.hbm.xml" />
+        <mapping resource="com/my/model/hbm/ToneDetails.hbm.xml" />
+       
+       <!-- 
+       		read-only—A concurrency strategy suitable for data which never changes.
+			Use it for reference data only.
+			
+			read-write—Maintains read committed isolation, using a timestamping mechanism.
+			Use this strategy for read-mostly data where it’s critical to prevent stale data in
+			concurrent transactions, in the rare case of an update.
+			
+			<class-cache usage="read-write" class="com.my.model.Category"/>
+			
+        -->
+
+      
+	</session-factory>
+</hibernate-configuration>

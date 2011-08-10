@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 07.11.2006 15:06:53 by Hibernate Tools 3.2.0.beta7 -->
+<hibernate-mapping auto-import="false">
+    <class name="com.my.model.Tone" table="TRBT_TONE">
+        <id name="id" type="integer">
+            <column name="ID" precision="10" scale="0" />
+            <generator class="native">
+                <param name="sequence">S_RBT_TONE</param>
+            </generator>
+        </id>
+       
+        <property name="productIdentifier" type="string">
+            <column name="PRODUCT_IDENTIFIER" length="50" not-null="true"/>
+        </property>
+        <property name="producer" type="string">
+            <column name="PRODUCER" length="250" />
+        </property>
+        <property name="deleted" type="boolean">
+            <column name="DELETED" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="purged" type="boolean">
+            <column name="PURGED" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaWeb" type="boolean">
+            <column name="AVAILABLE_VIA_WEB" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaWap" type="boolean">
+            <column name="AVAILABLE_VIA_WAP" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaSms" type="boolean">
+            <column name="AVAILABLE_VIA_SMS" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaIvr" type="boolean">
+            <column name="AVAILABLE_VIA_IVR" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaUssd" type="boolean">
+            <column name="AVAILABLE_VIA_USSD" precision="1" scale="0" not-null="true"/>
+        </property>        
+        <property name="availableViaShop" type="boolean">
+            <column name="AVAILABLE_VIA_SHOP" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaCustCare" type="boolean">
+            <column name="AVAILABLE_VIA_CC" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaBatch" type="boolean">
+            <column name="AVAILABLE_VIA_BATCH" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaProvisioning" type="boolean">
+            <column name="AVAILABLE_VIA_PROV" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="availableViaRbtCopy" type="boolean">
+            <column name="AVAILABLE_VIA_RBT_COPY" precision="1" scale="0" not-null="true"/>
+        </property>
+        <property name="approvalActionDate" type="timestamp">
+            <column name="APPROVAL_ACTION_DATE" length="7" />
+        </property>
+        <property name="approvalActionBy" type="string">
+            <column name="APPROVAL_ACTION_BY" length="30" />
+        </property>
+        <property name="purchasePeriod" type="integer">
+            <column name="PURCHASE_PERIOD" precision="2" scale="0" not-null="true"/>
+        </property>
+        <property name="expiryDate" type="timestamp">
+            <column name="EXPIRY_DATE" length="7" />
+        </property>
+        <property name="smsOrderCode" type="string">
+            <column name="SMS_ORDER_CODE" length="20"/>
+        </property>
+        <property name="ivrOrderCode" type="integer">
+            <column name="IVR_ORDER_CODE" precision="10" scale="0" />
+        </property>
+        <property name="ussdOrderCode" type="integer">
+            <column name="USSD_ORDER_CODE" precision="10" scale="0" />
+        </property>
+        <property name="played" type="integer">
+            <column name="PLAYED" precision="10" scale="0" not-null="true"/>
+        </property>
+        <property name="firstDeletionAttempt" type="timestamp">
+            <column name="FIRST_DELETION_ATTEMPT"/>
+        </property>
+        <property name="lastDeletionAttempt" type="timestamp">
+            <column name="LAST_DELETION_ATTEMPT"/>
+        </property>
+        <property name="fileDeletionErrors" type="integer">
+            <column name="FILES_DELETION_ERRORS" precision="10" scale="0"/>
+        </property>
+        <property name="distributionRetries" type="integer">
+            <column name="DISTRIBUTION_RETRIES" precision="2" scale="0" not-null="true"/>
+        </property>
+        <map name="details" inverse="true" cascade="all,delete-orphan" >
+            <key>
+                <column name="TONE_ID" precision="10" scale="0" not-null="true" />
+            </key>
+            <map-key-many-to-many column="LANGUAGE_CODE" class="com.my.model.Language"/>
+            <one-to-many class="com.my.model.ToneDetails"/>
+        </map>
+        <set name="toneCategories" inverse="true" cascade="all,delete-orphan">
+            <key>
+                <column name="TONE_ID" precision="10" scale="0" not-null="true" />
+            </key>
+            <one-to-many class="com.my.model.ToneCategory" />
+        </set>
+    </class>
+</hibernate-mapping>

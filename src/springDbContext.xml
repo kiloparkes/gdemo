@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+	   http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+	">
+  <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+  
+  	<!-- 
+  		As noted, our simple web application derives its database connection details from the
+		Hibernate configuration file. However, a larger web application typically needs to provide
+		database resources to other applications, in which case a Hibernate-specific configuration file
+		APPENDIX C n HIBERNATE AND SPRING 301
+		is not the appropriate location for its details to be stored.
+  	 -->
+  	 
+  	 <!-- 
+  	 	Spring allows data sources to be managed centrally as beans, and if a
+		JndiObjectFactoryBean bean is used, it can in turn draw its details from JNDI.
+		
+		SEE THE ALTERNATIVE springDbContext.xml
+  	  -->
+    <property name="configLocation" value="classpath:hibernate.cfg.xml"/>
+  </bean>
+  <!-- PUT IN A SEPARATE FILE (DaoContext) -->
+  <!-- NOTE: CategoryDaoImpl is nested inside the MediaTest class-->
+  <bean id="categoryDao" class="com.my.test.MediaTest$CategoryDaoImpl">
+			<property name="sessionFactory" ref="sessionFactory" />
+  </bean>
+  	<!--  ======================================== -->
+  	<!--  Declarative Transaction Management 		-->
+    <!--  ======================================== -->
+    
+  	<!-- 
+  		The transaction manager must be notified of the session factory in use so that it can
+		manage the transactions of the database connection configured in the session factory.
+  	 -->
+  	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"/>
+		<!-- Only if you will be using PROPAGATION_NESTED -->
+		<property name="nestedTransactionAllowed" value="true"/>
+	</bean>
+	
+	<!-- 
+		TransactionProxyFactoryBean is a proxy class that allows us to intercept method calls
+		to an existing class and apply transaction context. Here we declare an abstract bean
+		so that we can reuse it for wrapping many different beans requiring transaction
+		management.
+		
+		REMINDER: When you declare a Proxy you must specify the target object that the proxy
+					with represent. Calls will actually go to the proxy object which will in turn
+					delegate to the target method.
+	 -->
+	<bean id="daoTxTemplate" abstract="true"
+			class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+			<property name="transactionManager" ref="transactionManager"/>
+			<property name="transactionAttributes">
+				<props>
+					<prop key="create*">
+						PROPAGATION_REQUIRED,ISOLATION_READ_COMMITTED
+					</prop>
+					<prop key="get*">
+						PROPAGATION_REQUIRES_NEW,ISOLATION_READ_COMMITTED
+					</prop>
+					<prop key="add*">
+						PROPAGATION_REQUIRED,ISOLATION_READ_COMMITTED
+					</prop>
+				</props>
+			</property>
+	</bean>
+	
+	<!-- Spring will not create an object for daoTxTemplate bean because it is marked abstract.
+		 However category2Dao will result in a proxy bean creation for daoTxTemplate since
+		 daoTxTemplate is set as the parent of category2Dao. Therefore, calls to methods of
+		 the target class will be intercepted by the proxy which will apply transactional
+		 context.
+	  -->
+	<bean id="category2Dao" parent="daoTxTemplate">
+		<property name="target">
+			<bean class="com.my.test.MediaTest$CategoryDaoImpl">
+				<property name="sessionFactory" ref="sessionFactory"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="category4Dao" parent="daoTxTemplate">
+		<property name="target">
+			<bean class="com.my.test.MediaTest$CategoryDaoImpl">
+				<property name="sessionFactory" ref="sessionFactory"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- 
+		Alternative to declaring category2Dao as a sub-bean of the abstract Transaction Factory Bean
+		Using a separate bean for the Transaction Factory as in the above, we can re-use it for any bean 
+		that needs transaction control.
+	 -->
+	 	<bean id="category3Dao" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+			<property name="target">
+				<bean class="com.my.test.MediaTest$CategoryDaoImpl">
+					<property name="sessionFactory" ref="sessionFactory"/>
+				</bean>
+			</property>
+			
+			<property name="transactionManager" ref="transactionManager"/>
+			
+			<property name="transactionAttributes">
+				<props>
+					<prop key="create*">
+						PROPAGATION_REQUIRED,ISOLATION_READ_COMMITTED
+					</prop>
+					<prop key="get*">
+						PROPAGATION_REQUIRED,ISOLATION_READ_COMMITTED
+					</prop>
+				</props>
+			</property>
+			
+		</bean>
+	<!--  ======================================== -->
+  	<!--  END Declarative Transaction Management 	-->
+    <!--  ======================================== -->
+	
+
+	<!-- ===================================== -->
+	<!--  Annotation based AOP -->
+	<!-- ===================================== -->
+	<bean id="categoryServiceAOP" class="com.my.service.CategoryService">
+		<property name="categoryDao" ref="categoryDao" />
+	</bean>
+	<!--  
+	<bean class="com.my.service.CategoryService$LoggingAspect"/>
+	<bean class="com.my.service.CategoryService$LoggingAspect2"/>
+	<bean class="com.my.service.CategoryService$BeforeAspect"/>
+	<bean class="com.my.service.CategoryService$AfterAspect2"/>
+	-->
+	<bean class="com.my.service.CategoryService$BindingAspect"/>
+	
+	<!--  
+		Enable the @AspectJ support using tag <aop:aspectj-autoproxy />
+	   The code behind the <aop:aspectj-autoproxy /> tag is responsible
+		for post-processing all beans that have at least one piece of advice.
+		Spring will create a proxy for all advised beans. -->
+	<aop:aspectj-autoproxy />
+	<!-- ===================================== -->
+	<!--  END Annotation based AOP -->
+	<!-- ===================================== -->
+	
+	<!-- ===================================== -->
+	<!--  Aspect Using the aop Namespace -->
+	<!-- ===================================== -->
+	<bean id="logAspect" class="com.my.service.CategoryService$LoggingAspect3"/>
+	
+	<aop:config>
+		<aop:pointcut id="serviceCall"
+			expression="execution(* com.my.service.*.*(..))"/>
+		<aop:aspect id="firstAspect" ref="logAspect">
+			<aop:around method="log" pointcut-ref="serviceCall"/>
+		</aop:aspect>
+	</aop:config>
+	
+	<!-- ===================================== -->
+	<!--  END Aspect Using the aop Namespace -->
+	<!-- ===================================== -->
+	
+	
+	<!-- ===================================== -->
+	<!-- Using XML AOP Transaction Management  -->
+	<!-- ===================================== -->
+	<!-- 
+		tx:advice is a build it spring advice which is used to handle transactional context
+		We just need to configure it, specifying the transaction manager and the transaction
+		attributes. This advice will be used by the advisor configured using the aop:advisor
+	 -->
+	<tx:advice id="tx-advice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="*" propagation="REQUIRED"/>
+		</tx:attributes>
+	</tx:advice>
+	<!-- 
+	
+		If we wanted to make all method executions in the CategoryService participate in a transaction, 
+		we could use the SystemPointcuts.testBeanExecution() in the <aop:advisor . . ./> element.
+
+		define an advice (using the <aop:advisor . . ./> element); the advice is referencing
+		the @Pointcut-annotated method from the SystemPointcuts class;
+		The body of the advice is tx:advice.
+		
+		the method execution will take part in a transaction, and the advice will commit the 
+		transaction if the method execution does not throw any exceptions.
+		
+		Basically all you need to do is define the point cut and configure the transaction 
+		manager.
+	 -->
+	<aop:config>
+		<aop:advisor advice-ref="tx-advice"
+			pointcut="com.my.service.CategoryService$SystemPointcuts.testBeanExecution2()"/>
+	</aop:config>
+	<!-- ===================================== -->
+	<!-- END Using XML AOP Transaction Management -->
+	<!-- ===================================== -->
+	
+	
+	<!-- ===================================== -->
+	<!-- Annotation based transaction management -->
+	<!-- ===================================== -->
+	<!-- 
+		All you need is tx:annotation-driven and <aop:aspectj-autoproxy /> which
+		is already specified above. The transaction is annotated in the code and
+		The point-cut is determined based on the methods to which you apply
+		transactional annotation
+	 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+	
+	<!-- ===================================== -->
+	<!-- END Annotation based transaction management -->
+	<!-- ===================================== -->
+	
+
+	<!-- 
+		Spring Schemas
+		- The context Schema
+		<context:property-placeholder location= "classpath:/com/my/service/test.properties" />
+		
+		- The util Schema
+		<util:constant id="Y" static-field="java.lang.Integer.MAX_VALUE"/>
+		<util:list id="X" list-class="java.util.ArrayList">
+			<value>value1</value>
+			<ref bean="Y"/>
+		</util:list>
+		
+		<util:list id="X" list-class="java.util.ArrayList">
+			<value>value1</value>
+				<ref bean="Y"/>
+		</util:list>
+		
+		<util:properties id="BeanId"
+			location="classpath:com/apress/prospring2/ch07/util/Main.properties"/>
+			
+		The bean identified by BeanId declares a java.util.Properties bean with values 
+		loaded from a properties file in the classpath location com/apress/prospring2/ch07/util/Main.properties.
+		
+		<util:constant id="X" static-field="java.lang.Integer.MAX_VALUE"/>
+		<util:set id="S" set-class="java.util.HashSet">
+			<value>foo</value>
+				<ref bean="X"/>
+		</util:set>
+		if we were to change the set-class to java.util.TreeSet, the bean construction would fail, 
+		because a TreeSet can’t contain objects of different types.
+		
+		<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+			<property name="jndiName" value="jdbc/dataSource"/>
+		</bean>
+	
+		
+		ALTERNATIVE JNDI configuration
+		<jee:jndi-lookup id="dataSource" jndi-name="jdbc/MyDataSource"/>
+	 -->
+  </beans>

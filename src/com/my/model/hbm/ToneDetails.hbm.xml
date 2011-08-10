@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 07.11.2006 15:06:53 by Hibernate Tools 3.2.0.beta7 -->
+<hibernate-mapping auto-import="false">
+    <class name="com.my.model.ToneDetails" table="TRBT_TONE_DETAILS">
+        <id name="id" type="integer">
+            <column name="ID" precision="10" scale="0" />
+            <generator class="native">
+                <param name="sequence">S_RBT_TONE_DETAILS</param>
+            </generator>
+        </id>
+        <many-to-one name="tone" class="com.my.model.Tone">
+            <column name="TONE_ID" precision="10" scale="0" not-null="true" />
+        </many-to-one>
+        <many-to-one name="language" class="com.my.model.Language">
+            <column name="LANGUAGE_CODE" length="2"/>
+        </many-to-one>
+        <property name="artist" type="string">
+            <column name="ARTIST" length="250" not-null="true"/>
+        </property>
+        <property name="name" type="string">
+            <column name="NAME" length="250" not-null="true"/>
+        </property>
+        <property name="shortName" type="string">
+            <column name="SHORT_NAME" length="30" />
+        </property>
+    </class>
+</hibernate-mapping>

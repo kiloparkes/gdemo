@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 
+		NOTES:
+		Spring MVC applications usually have two ApplicationContexts configured in a 
+		parent-child relationship.
+
+		The parent context, or root ApplicationContext, contains all of the non–web 
+		specific beans such as the services, DAOs, and supporting POJOs.
+		
+		To create the root ApplicationContext, there are two choices.
+		 - The first is to use the ContextLoaderListener (Servlet 2.2 container or if 2.3 does not
+		 	correctly initialize listeners before servlets)
+	 -->
+	<import resource="springDbContext.xml" />
+	
+	<bean id="categoryService" class="com.my.service.CategoryService">
+		<property name="categoryDao" ref="categoryDao" />
+	</bean>
+	
+</beans>
