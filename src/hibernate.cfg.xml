@@ -15,8 +15,8 @@
         -->
         <property name="connection.driver_class">oracle.jdbc.OracleDriver</property>
         <property name="connection.url">jdbc:oracle:thin:@//localhost:1521/XE</property>
-        <property name="connection.username">rbtstd</property>
-        <property name="connection.password">rbtstd</property>
+        <property name="connection.username">rbt</property>
+        <property name="connection.password">rbt</property>
 		
 	 	<property name="dialect">org.hibernate.dialect.Oracle10gDialect</property>
 	 	<!--  

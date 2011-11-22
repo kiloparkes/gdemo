@@ -1,3 +1,4 @@
+
 package com.my.test;
 
 
@@ -433,15 +434,47 @@ public class MediaTest {
 		
 		MediaTest m = new MediaTest();
 		//CategoryDaoImpl.createTest();
+		m.listCategories2Test();
+		//createTest();
 		//leftJoinTest();
 		//CategoryDaoImpl.addChildrenTest();
 		//CategoryDaoImpl.addParentTest();
 		//CategoryDaoImpl.explicitTransactionAddChildrenTest();
 		//m.listCategoriesTest();
-		m.sqlJoinTest();
+		//m.sqlJoinTest();
 		//m.leftJoinTest();
 	}
 
+	static void createTest(){
+		// This example builds up the object tree before call CategoryDaoImpl.createTest()
+		// essentially, build up before a transaction begins.
+		
+		String strId = "myCategory9";
+		String lang = "en";
+		String name = "My Jazz9";
+		
+		Category c = new Category();
+		c.setCategoryIdentifier(strId);
+		c.setCreated(new Date());
+		c.setCreatedBy("me");
+		
+		
+		// Using a transient Language
+		Language lg = new Language();
+		lg.setCode(lang);
+		
+		CategoryDetails  cd = new CategoryDetails();
+		cd.setCategory(c);
+		cd.setLanguage(lg);
+		cd.setName(name);
+		
+		Map<Language, CategoryDetails> cdMap = new HashedMap();
+		cdMap.put(lg, cd);
+		c.setDetails(cdMap);
+		
+		CategoryDaoImpl.createTest2(c);
+		
+	}
 	/*=======================================================================================*/
 	/* 				Using Hibernate without Spring Integration 
 	/*=======================================================================================*/
@@ -520,6 +553,11 @@ public class MediaTest {
 				return q.list();
 			}
 		});
+	}
+	
+	public void listCategories2Test(){
+		List<Category> catList = listCategories12();
+		System.out.println(catList.size());
 	}
 	
 	/*============================================*/
@@ -744,7 +782,9 @@ public class MediaTest {
 	/*============================================*/
 	/* 	Distinct Results/LEFT OUTER JOIN		*/
 	/*============================================*/
-	/*
+	/*  USING JOIN HERE Ensures that associated entity (parent) and collection (toneCategories) will be
+	 *  fetched at the same time (in one query) as the owning entity (category). However, without using
+	 *  left outer the query will not return categories where the parent is null
 	 * - LEFT OUTER JOIN (Not only row where the join criteria is met, but all rows where the left hand 
 	 * 			entity join parameter is null)
 	 * 		- LEFT JOIN ensures that even if categories (entity on the left) has a NULL value for parent property
@@ -1362,6 +1402,7 @@ public class MediaTest {
 		List<Category> getAll2();
 		Category get(final Integer catId);
 		void create(String strId, String name, String lang);
+		void create(Category c);
 		Language getLanguage(String lang);
 		Category updateCategory();
 		Category updateCategoryMerge();
@@ -1481,48 +1522,60 @@ public class MediaTest {
 		 * (non-Javadoc)
 		 * @see com.my.test.MediaTest.CategoryDAO#create(java.lang.String, java.lang.String, java.lang.String)
 		 * O&A:
-		 * 		1. Can you save one class and cause the reference class to also save with directly saving it.
+		 * 		1. Can you save one class and cause the reference class to also save without directly saving it.
 		 */
 		public void create(String strId, String name, String lang){
 			
-			// Here I am getting the transaction so that I can inspect it.
-			System.out.println(getSession().getTransaction());
-			
-			get(1);
+//			// Here I am getting the transaction so that I can inspect it.
+//			System.out.println(getSession().getTransaction());
+//			
+//			get(1);
 			
 			Category c = new Category();
 			c.setCategoryIdentifier(strId);
 			c.setCreated(new Date());
 			c.setCreatedBy("me");
 			
-//			DetachedCriteria dc = DetachedCriteria.forClass(Language.class);
-//			dc.add(Restrictions.eq("code", lang));
-//			Language l = (Language)getHibernateTemplate().findByCriteria(dc).get(0);
+			DetachedCriteria dc = DetachedCriteria.forClass(Language.class);
+			dc.add(Restrictions.eq("code", lang));
+			Language l = (Language)getHibernateTemplate().findByCriteria(dc).get(0);
 			
-			CategoryDAO cat4Dao = (CategoryDAO) ctx.getBean("category4Dao");
+			//CategoryDAO cat4Dao = (CategoryDAO) ctx.getBean("category4Dao");
 			
 			// invoking get language from a different DAO instance in order to demonstrate
 			// propagation behavior: Note propagation behavior is always with respect to
 			// invocation between two different object instances.  It does not apply to
 			// calling of another method within the same instance.
-			Language l = cat4Dao.getLanguage(lang);
+			//Language l = cat4Dao.getLanguage(lang);
+			
+			
+			// Using a transient Language
+			Language lg = new Language();
+			lg.setCode("fr");
 			
 			CategoryDetails  cd = new CategoryDetails();
 			cd.setCategory(c);
-			cd.setLanguage(l);
+			cd.setLanguage(lg);
 			cd.setName(name);
 			
 			Map<Language, CategoryDetails> cdMap = new HashedMap();
 			cdMap.put(l, cd);
 			c.setDetails(cdMap);
 			
-			getHibernateTemplate().save(c);
+			if( c.getId()== null)
+				getHibernateTemplate().merge(c);
+			else
+				getHibernateTemplate().save(c);
 			
 			//NOTE: If we did not call setDetails() we would need to call save() for the detail as
 			//seen below.
 			// If saving of category details fails the transaction will be rolled back
 			//getHibernateTemplate().save(cd);
 			
+		}
+		
+		public void create(Category c){
+			getHibernateTemplate().merge(c);
 		}
 		/* 
 		 * ------------- Transitive persistence ----------------------------------
@@ -1596,7 +1649,14 @@ public class MediaTest {
 		public static void createTest(){
 			System.out.println("//---------------------------------------- create()");
 			CategoryDAO cat2Dao = (CategoryDAO) ctx.getBean("category2Dao");
-			cat2Dao.create("myCategory4", "My Jazz4", "en");
+			cat2Dao.create("myCategory11", "My Jazz11", "en");
+		}
+		
+		public static void createTest2(Category c){
+			System.out.println("//---------------------------------------- create()");
+			
+			CategoryDAO cat2Dao = (CategoryDAO) ctx.getBean("category2Dao");
+			cat2Dao.create(c);
 		}
 		
 		public static void addChildrenTest(){
@@ -1670,6 +1730,8 @@ public class MediaTest {
 			parent.setDetails(cdMap);
 			
 			getHibernateTemplate().saveOrUpdate(parent);
+			//Note:We do not need to call save on the child object since it is already persistent
+			//and attached. Furthermore, the new parent is now persistent(attached to session)
 			child.setParent(parent);
 		}
 		
@@ -1682,7 +1744,7 @@ public class MediaTest {
 		 *  
 		 *  If we had added new transient sub-categories of Child Category we still would
 		 *  only need to save just the child and the sub-categories of child would also
-		 *  be saved.
+		 *  be saved becuase we have cascasde=all for childern
 		 *  
 		 *  We could also call merge()/update() on the parent if we  have changes on the parent 
 		 *  that we also want to persist. We could not use save() on the parent because it
@@ -1732,6 +1794,7 @@ public class MediaTest {
 //			children.add(child);
 //			parent.setChildren(children);
 			
+			// Adding transient child to detached parent
 			parent.addChildCategory(child);
 			
 			s =  getSession();

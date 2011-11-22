@@ -69,7 +69,63 @@
             <list-index column="IDX"/>
             <one-to-many class="com.my.model.Category" />
         </list>
-        <set name="toneCategories" inverse="true" cascade="all" >
+        
+       	<!-- lazy=true (the default) means that if you try to reference the toneCategories
+       		 collection outside an active hibernate session we will get the following 
+       		 exception:
+       		 org.hibernate.LazyInitializationException - failed to lazily 
+       		 initialize a collection of role: com.my.model.Category.toneCategories, 
+       		 no session or session was closed.
+       		 
+       		 This happens because hibernate only loads a proxy to the collection and not the
+       		 actual objects unless you tell it to fetch then when you fetch the owning object.
+       		 Once you exist the session the proxy is no longer valid
+       		 
+       		 Solutions: Set lazy to false (see notes below) or programatically override
+       		 by using joins as follows:
+       		 ***With Criteria query use setFetchMode() to enable or disable outer join 
+       		 	fetching for a particular collection or association. 
+       		 ***With HQL use LEFT JOIN FETCH to enable outer-join fetching for a particular 
+       		 	collection or nullable many-to-one or one-to-one association, or JOIN FETCH 
+       		 	to enable inner join fetching for a non-nullable many-to-one or one-to-one association.
+       	 -->
+       	 
+       	 <!-- Notes:
+       	 	Hibernate3 loads a single entity instance if you retrieve it by identifier through get() or load().
+       	 	All collections mapped for this entity, and all associated entities, be it through to-many or to-one 
+       	 	associations, are not loaded. For collections there are wrappers in place, for single-ended 
+       	 	associations, a proxy is used by default. Collection wrappers are Hibernate implementations of JDK 
+       	 	collection interfaces, which can initialize data on-demand. A proxy is a placeholder instance of a 
+       	 	runtime-generated subclass (through cglib or Javassist) of a mapped persistent class, it can 
+       	 	initialize itself if any method is called that is not the mapped database identifier getter-method.
+       	 	
+       	 	If you then navigate from the loaded entity instances to a wrapped collection or proxied associated 
+       	 	entity, and access the collection or entity, an additional SELECT will be executed to fetch exactly 
+       	 	what you just hit in your code.
+       	 	
+       	 	You can switch to an immediate non-lazy second SELECT by setting lazy="false" on a collection or 
+       	 	single-valued association mapping
+       	 	
+       	 	The lazy settings let you define WHAT part of the persistent graph should be loaded at all times
+       	 	
+       	 	The question of how to load is answered by the fetch setting:
+       	 	With fetch="join" on a collection or single-valued association mapping, you will actually avoid 
+       	 	the second SELECT by using just one "bigger" outer (for nullable many-to-one foreign keys and 
+       	 	collections) or inner (for not-null many-to-one foreign keys) join SELECT to get both the owning 
+       	 	entity and the referenced entity or collection.
+       	 	
+       	 	With batch-size="N" on a collection or an entity class mapping you tell Hibernate to optimize 
+       	 	the second SELECT (either lazy or non-lazy) by fetching up to N other collections 
+       	 	(or entity instances) when you hit one in Java, depending on how many "owning" entities you 
+       	 	expect to be in the Session already. This is a blind-guess optimization technique, but very 
+       	 	nice for nested tree node loading.
+       	 	
+       	 	With fetch="subselect" on a collection you can tell Hibernate to not only load this collection 
+       	 	in the second SELECT (either lazy or non-lazy), but also all other collections for all "owning" 
+       	 	entities you loaded in the first SELECT. This is especially useful for fetching multiple 
+       	 	collections in parallel.
+       	  -->
+        <set name="toneCategories" inverse="true" cascade="all" lazy="true" >
             <key>
                 <column name="CATEGORY_ID" precision="10" scale="0" not-null="true" />
             </key>
@@ -94,6 +150,20 @@
             <list-index column="IDX"/>
             <one-to-many class="com.my.model.ToneCategory" />
         </list>
+        <!-- Note:
+        	With inverse=true hibernate does.........................for when saving a new category
+        	Hibernate: insert into TRBT_CATEGORY (PARENT_ID, IDX, CATEGORY_IDENTIFIER, RANKED, AVAILABLE_VIA_WEB, AVAILABLE_VIA_WAP, AVAILABLE_VIA_IVR, DTMF, CREATED, CREATED_BY, RANK_AUTO_SCHEDULE_TIME, RANK_AUTO_SCHEDULE_DAY, RANK_AUTO_TOP_TONES, LAST_REFRESH_RANKED, RANK_TYPE, IMAGE_UPLOADED, PROMOTIONAL, PROMOTION_VALID_FROM, PROMOTION_VALID_TO, ID) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			Hibernate: insert into TRBT_CATEGORY_DETAILS (CATEGORY_ID, LANGUAGE_CODE, NAME, DESCRIPTION, ID) values (?, ?, ?, ?, ?)
+        	Without ... hibernate does ........ one extra statement ... an update
+        	Hibernate: insert into TRBT_CATEGORY (PARENT_ID, IDX, CATEGORY_IDENTIFIER, RANKED, AVAILABLE_VIA_WEB, AVAILABLE_VIA_WAP, AVAILABLE_VIA_IVR, DTMF, CREATED, CREATED_BY, RANK_AUTO_SCHEDULE_TIME, RANK_AUTO_SCHEDULE_DAY, RANK_AUTO_TOP_TONES, LAST_REFRESH_RANKED, RANK_TYPE, IMAGE_UPLOADED, PROMOTIONAL, PROMOTION_VALID_FROM, PROMOTION_VALID_TO, ID) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			Hibernate: insert into TRBT_CATEGORY_DETAILS (CATEGORY_ID, LANGUAGE_CODE, NAME, DESCRIPTION, ID) values (?, ?, ?, ?, ?)
+			Hibernate: update TRBT_CATEGORY_DETAILS set CATEGORY_ID=?, LANGUAGE_CODE=? where ID=?
+         -->
+         <!-- 
+         	With inverse=true we tell Hibernate that it should propagate changes made at the CategoryDetails end of the 
+         	association to the database, ignoring changes made only to the  details collection. Thus if we only call 
+         	category.getDetails().add(detail), no changes will be mad persistent.
+          -->
         <map name="details" inverse="true" cascade="all,delete-orphan">
             <key>
                 <column name="CATEGORY_ID" precision="10" scale="0" not-null="true" />
